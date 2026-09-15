@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>중국 반도체 퀴즈 — 비즈니스와 경제</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0f1620;
+    --panel:#182330;
+    --panel2:#1f2d3d;
+    --line:#2b3d51;
+    --text:#e7edf3;
+    --muted:#8ea0b3;
+    --teal:#3ec1b8;
+    --gold:#e9b949;
+    --good:#4cd38a;
+    --bad:#ef6363;
+    --die:#26394d;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    background:var(--bg);
+    color:var(--text);
+    font-family:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+    line-height:1.55;
+    display:flex;justify-content:center;align-items:flex-start;
+    padding:24px 16px 48px;
+  }
+  .app{width:100%;max-width:560px}
+
+  /* header */
+  .top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+  .top h1{font-size:20px;font-weight:700;letter-spacing:-.01em}
+  .top h1 small{display:block;font-size:12px;font-weight:500;color:var(--muted);margin-top:2px}
+  .badge{background:var(--panel2);border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:13px;color:var(--muted);white-space:nowrap}
+  .badge b{color:var(--gold);font-weight:600}
+
+  /* wafer */
+  .wafer-wrap{display:flex;justify-content:center;margin:6px 0 20px}
+  svg.wafer{width:190px;height:190px}
+  .die{fill:var(--die);stroke:var(--bg);stroke-width:1.2;transition:fill .35s}
+  .die.ok{fill:var(--good)}
+  .die.ng{fill:var(--bad)}
+  .die.cur{fill:var(--gold);animation:pulse 1s infinite alternate}
+  @keyframes pulse{from{opacity:1}to{opacity:.45}}
+
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px}
+  .card p.lead{color:var(--muted);font-size:14.5px;margin-top:10px}
+  .card h2{font-size:22px;font-weight:700;letter-spacing:-.01em}
+
+  .rules{margin:18px 0 22px;padding:14px 16px;background:var(--panel2);border-radius:10px;font-size:14px;color:var(--muted)}
+  .rules li{list-style:none;padding:3px 0}
+  .rules li::before{content:"";display:inline-block;width:8px;height:8px;background:var(--teal);margin-right:10px;border-radius:2px;vertical-align:1px}
+
+  .btn{
+    width:100%;background:var(--teal);color:#062421;border:0;border-radius:10px;
+    padding:14px 18px;font:inherit;font-size:16px;font-weight:700;cursor:pointer;
+    transition:transform .1s, filter .15s;
+  }
+  .btn:hover{filter:brightness(1.08)}
+  .btn:active{transform:scale(.985)}
+  .btn:focus-visible,.opt:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  .btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line);margin-top:10px;font-weight:500}
+
+  /* quiz */
+  .meta{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:8px}
+  .timer{height:6px;background:var(--panel2);border-radius:3px;overflow:hidden;margin-bottom:18px}
+  .timer i{display:block;height:100%;background:var(--teal);width:100%;transition:width 1s linear}
+  .timer i.warn{background:var(--bad)}
+  .q{font-size:18px;font-weight:600;line-height:1.5;margin-bottom:18px;word-break:keep-all}
+  .opts{display:grid;gap:9px}
+  .opt{
+    text-align:left;background:var(--panel2);color:var(--text);border:1px solid var(--line);
+    border-radius:10px;padding:13px 14px;font:inherit;font-size:15px;cursor:pointer;
+    display:flex;gap:12px;align-items:flex-start;transition:border-color .15s,background .15s;
+    word-break:keep-all;
+  }
+  .opt:hover:not(:disabled){border-color:var(--teal)}
+  .opt:disabled{cursor:default}
+  .opt .k{flex:0 0 22px;height:22px;border-radius:6px;background:var(--line);color:var(--muted);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;margin-top:1px}
+  .opt.right{border-color:var(--good);background:rgba(76,211,138,.12)}
+  .opt.right .k{background:var(--good);color:#062421}
+  .opt.wrong{border-color:var(--bad);background:rgba(239,99,99,.12)}
+  .opt.wrong .k{background:var(--bad);color:#fff}
+
+  .explain{margin-top:16px;padding:14px 16px;border-radius:10px;background:var(--panel2);font-size:14px;color:var(--muted);border-left:3px solid var(--gold);word-break:keep-all}
+  .explain b{color:var(--text)}
+  .explain.hidden,.hidden{display:none}
+  .next{margin-top:14px}
+
+  /* result */
+  .score{display:flex;align-items:baseline;gap:8px;margin:6px 0 2px}
+  .score .n{font-size:56px;font-weight:700;color:var(--gold);line-height:1;letter-spacing:-.02em}
+  .score .u{font-size:16px;color:var(--muted)}
+  .grade{font-size:18px;font-weight:600;color:var(--teal);margin-bottom:6px}
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:18px 0}
+  .stat{background:var(--panel2);border-radius:10px;padding:12px;text-align:center}
+  .stat b{display:block;font-size:20px;font-weight:700}
+  .stat span{font-size:12px;color:var(--muted)}
+  .review{margin-top:6px;font-size:14px}
+  .review summary{cursor:pointer;color:var(--muted);padding:6px 0}
+  .review li{list-style:none;padding:8px 0;border-top:1px solid var(--line);word-break:keep-all}
+  .review li.ng{color:var(--muted)}
+  .review li .m{font-weight:600;margin-right:6px}
+  .review li.ok .m{color:var(--good)}
+  .review li.ng .m{color:var(--bad)}
+
+  .field{margin:16px 0 4px}
+  .field label{display:block;font-size:13px;color:var(--muted);margin-bottom:6px}
+  .field input{width:100%;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:13px 14px;font:inherit;font-size:16px;color:var(--text)}
+  .field input:focus{outline:none;border-color:var(--teal)}
+  .err{font-size:13px;color:var(--bad);min-height:18px;margin:4px 0 8px}
+  .who{font-size:13px;color:var(--muted)}
+  .nick{font-size:34px;font-weight:700;color:var(--text);letter-spacing:-.02em;line-height:1.2;margin-bottom:12px;word-break:break-all}
+  .rank{margin-top:22px}
+  .rank h3{font-size:15px;font-weight:600;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center}
+  .rank h3 button{background:none;border:0;color:var(--muted);font:inherit;font-size:12px;cursor:pointer;text-decoration:underline}
+  .rank table{width:100%;border-collapse:collapse;font-size:14px}
+  .rank td{padding:9px 6px;border-top:1px solid var(--line)}
+  .rank td:first-child{width:36px;color:var(--muted);font-weight:600}
+  .rank td:last-child{text-align:right;font-weight:600;color:var(--gold)}
+  .rank tr.me td{background:rgba(62,193,184,.12)}
+  .rank tr.me td:nth-child(2)::after{content:" (나)";color:var(--teal);font-size:12px}
+  .rank .empty{color:var(--muted);font-size:14px;padding:10px 0}
+  .rank .sub{color:var(--muted);font-size:12px;font-weight:400;margin-left:6px}
+  .wrong-box{margin-top:6px}
+  .wrong-box h3{font-size:15px;font-weight:600;margin-bottom:6px;color:var(--bad)}
+  .wrong-box li{list-style:none;padding:12px 0;border-top:1px solid var(--line);word-break:keep-all}
+  .wrong-box .wq{font-weight:600;font-size:14.5px;margin-bottom:6px}
+  .wrong-box .wa{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:13px;margin-bottom:8px}
+  .wrong-box .x{color:var(--bad)}
+  .wrong-box .o{color:var(--good);font-weight:600}
+  .wrong-box .we{font-size:13.5px;color:var(--muted);line-height:1.6;padding-left:10px;border-left:2px solid var(--gold)}
+  .foot{margin-top:14px;text-align:center;font-size:12px;color:var(--muted)}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <h1>중국 반도체 퀴즈<small>기업 · 정책 · 수출통제 · 경제</small></h1>
+    <div class="badge">점수 <b id="scoreBadge">0</b></div>
+  </div>
+
+  <div class="wafer-wrap">
+    <svg class="wafer" viewBox="0 0 100 100" aria-hidden="true">
+      <circle cx="50" cy="50" r="49" fill="#1a2532"/>
+      <g id="dies"></g>
+      <circle cx="50" cy="50" r="49" fill="none" stroke="#3a4f66" stroke-width="1.5"/>
+      <rect x="35" y="96" width="30" height="4" fill="#0f1620"/>
+    </svg>
+  </div>
+
+  <!-- 시작 화면 -->
+  <section class="card" id="start">
+    <h2>웨이퍼 한 장, 10문제</h2>
+    <p class="lead">SMIC·YMTC·화웨이 같은 기업부터 빅 펀드, 미국 수출통제, 중국의 맞대응까지 묻습니다. 정답이면 다이가 살고, 오답이면 불량 처리됩니다.</p>
+    <ul class="rules">
+      <li>문제당 20초, 시간 초과는 오답</li>
+      <li>정답 10점 + 빠르게 맞히면 최대 5점 보너스</li>
+      <li>매 판마다 문제와 보기 순서가 바뀝니다</li>
+    </ul>
+    <div class="field">
+      <label for="nickInput">닉네임</label>
+      <input id="nickInput" maxlength="12" placeholder="예: 상하이 김프로" autocomplete="off">
+    </div>
+    <div class="err" id="nickErr"></div>
+    <button class="btn" id="startBtn">퀴즈 시작</button>
+  </section>
+
+  <!-- 문제 화면 -->
+  <section class="card hidden" id="quiz">
+    <div class="meta"><span id="progress">1 / 10</span><span id="timeLeft">20초</span></div>
+    <div class="timer"><i id="timerBar"></i></div>
+    <div class="q" id="qText"></div>
+    <div class="opts" id="opts"></div>
+    <div class="explain hidden" id="explain"></div>
+    <button class="btn next hidden" id="nextBtn">다음 문제</button>
+  </section>
+
+  <!-- 결과 화면 -->
+  <section class="card hidden" id="result">
+    <div class="who">이번 판 결과</div>
+    <div class="nick" id="resNick"></div>
+    <div class="score"><span class="n" id="finalScore">0</span><span class="u">/ 150점</span></div>
+    <div class="grade" id="grade"></div>
+    <p class="lead" id="comment"></p>
+    <div class="stats">
+      <div class="stat"><b id="stCorrect">0</b><span>정답</span></div>
+      <div class="stat"><b id="stYield">0%</b><span>수율</span></div>
+      <div class="stat"><b id="stBest">0</b><span>최고 점수</span></div>
+    </div>
+    <div class="rank">
+      <h3>순위<button id="clearRank" type="button">순위 초기화</button></h3>
+      <table id="rankTable"></table>
+    </div>
+    <div class="wrong-box">
+      <h3 id="wrongTitle"></h3>
+      <ul id="wrongList"></ul>
+    </div>
+    <details class="review"><summary>맞힌 문제 보기</summary><ul id="reviewList"></ul></details>
+    <button class="btn" id="retryBtn">다시 도전</button>
+    <button class="btn ghost" id="shareBtn">결과 복사</button>
+  </section>
+
+  <div class="foot">중국 반도체 퀴즈 · 총 22문제 중 10문제 랜덤 출제</div>
+</div>
+
+<script>
+const BANK = [
+  {q:"중국 최대 파운드리 기업으로, 2020년 미국 Entity List에 오른 뒤에도 7nm급 공정을 자체 개발한 회사는?", a:["SMIC(中芯国际)","Hua Hong(华虹)","YMTC","Nexchip"], c:0,
+   e:"SMIC는 상하이에 본사를 둔 중국 1위 파운드리입니다. EUV 없이 DUV 다중 패터닝으로 7nm급(N+2) 공정을 구현해 2023년 화웨이 Mate 60의 Kirin 9000S를 생산했습니다."},
+  {q:"중국의 대표 NAND 플래시 메모리 기업은?", a:["CXMT(长鑫存储)","YMTC(长江存储)","Hygon","Cambricon"], c:1,
+   e:"YMTC(양쯔메모리)는 우한에 본사를 둔 NAND 전문 기업입니다. Xtacking 기술로 200단 이상 제품을 내놓았고, 2022년 12월 미국 Entity List에 등재되었습니다. CXMT는 DRAM 기업입니다."},
+  {q:"중국의 대표 DRAM 기업으로, 허페이(合肥)에 본사를 둔 회사는?", a:["YMTC","SMIC","CXMT(长鑫存储)","JCET"], c:2,
+   e:"CXMT(창신메모리)는 중국 DRAM 국산화의 중심으로 DDR4·DDR5·LPDDR5를 양산하며 HBM 개발도 추진 중입니다. 삼성·SK하이닉스·마이크론이 과점한 DRAM 시장의 잠재 경쟁자로 꼽힙니다."},
+  {q:"화웨이의 반도체 설계 자회사 이름은?", a:["HiSilicon(하이실리콘)","Unisoc","Loongson","Biren"], c:0,
+   e:"하이실리콘은 스마트폰 AP 'Kirin', AI 가속기 'Ascend', 서버 CPU 'Kunpeng' 등을 설계합니다. 2019년 화웨이가 Entity List에 오르면서 TSMC 생산이 막혔고, 이후 SMIC로 생산처를 옮겼습니다."},
+  {q:"중국 정부가 반도체 산업 육성을 위해 2014년 처음 조성한 국가 펀드를 흔히 부르는 이름은?", a:["실크로드 펀드","빅 펀드(大基金)","일대일로 기금","중앙과학기금"], c:1,
+   e:"국가집적회로산업투자기금, 통칭 '빅 펀드'는 1기(2014) 약 1,390억 위안, 2기(2019) 약 2,040억 위안에 이어 2024년 5월 3기 약 3,440억 위안(약 65조 원)이 조성돼 역대 최대 규모를 기록했습니다."},
+  {q:"'중국제조 2025'에서 제시한 반도체 자급률 목표는?", a:["2025년까지 30%","2025년까지 50%","2025년까지 70%","2025년까지 100%"], c:2,
+   e:"2015년 발표된 중국제조 2025는 반도체 자급률을 2020년 40%, 2025년 70%로 끌어올리는 목표를 제시했습니다. 실제 자급률은 목표에 크게 못 미치는 것으로 평가됩니다."},
+  {q:"미국이 첨단 컴퓨팅 칩과 반도체 장비의 대중국 수출을 포괄적으로 제한한 대규모 조치가 처음 발표된 시점은?", a:["2018년 3월","2020년 5월","2022년 10월","2024년 1월"], c:2,
+   e:"2022년 10월 7일 미국 상무부 BIS는 첨단 AI 칩, 슈퍼컴퓨터용 부품, 첨단 공정 장비의 대중국 수출을 제한하고 미국인의 중국 첨단 팹 지원까지 금지하는 역사적 규제를 발표했습니다. 이후 2023년 10월, 2024년 12월에 추가 강화되었습니다."},
+  {q:"미국 수출통제에서 미국산 기술·장비로 만든 외국 제품까지 규제 대상으로 삼는 규칙은?", a:["FDPR(해외직접생산품규칙)","De minimis 규칙","Wassenaar 협정","ITAR"], c:0,
+   e:"FDPR(Foreign Direct Product Rule)은 미국 밖에서 생산됐더라도 미국 기술·소프트웨어·장비가 쓰였다면 미국 수출통제를 적용하는 규칙입니다. 2020년 화웨이에 확대 적용되면서 TSMC의 화웨이 공급이 끊겼습니다."},
+  {q:"중국이 2023년 8월부터 수출 허가제로 통제하기 시작한 반도체 핵심 소재 두 가지는?", a:["희토류·리튬","갈륨·게르마늄","실리콘·구리","텅스텐·코발트"], c:1,
+   e:"갈륨은 GaN 전력반도체, 게르마늄은 광통신·적외선 소자에 쓰입니다. 중국은 전 세계 갈륨 생산의 90% 이상을 차지하며, 2024년 12월에는 미국향 수출을 아예 금지했습니다. 2025년 4월에는 희토류 7종 통제도 추가했습니다."},
+  {q:"ASML의 EUV 노광장비를 중국이 도입하지 못하는 직접적인 이유는?", a:["가격이 너무 비싸서","네덜란드 정부가 수출 허가를 내주지 않아서","중국 팹이 EUV를 원하지 않아서","EUV는 일본에서만 생산해서"], c:1,
+   e:"EUV 장비는 2019년부터 네덜란드 정부가 수출 허가를 보류해 중국에 단 한 대도 반입되지 않았습니다. 2023년 9월부터는 고급 DUV(NXT:2000i 이상)도 수출 허가 대상이 되었습니다."},
+  {q:"중국의 대표 반도체 장비 기업으로, 식각·증착 장비를 만드는 두 회사는?", a:["Naura(北方华创)·AMEC(中微)","Lam Research·Applied Materials","SMEE·ACM Research","Tokyo Electron·Kokusai"], c:0,
+   e:"Naura는 베이징, AMEC는 상하이에 본사를 둔 중국 장비 국산화의 양대 축입니다. 미국 규제 이후 중국 팹이 국산 장비 채택을 늘리면서 두 회사 매출이 급성장했습니다. SMEE는 노광장비 회사입니다."},
+  {q:"중국이 매년 수입하는 품목 중 금액 기준으로 원유를 넘어 1위를 차지하는 것은?", a:["철광석","반도체(집적회로)","대두","항공기"], c:1,
+   e:"중국의 반도체 수입액은 2021년 약 4,300억 달러로 정점을 찍었고 이후에도 연 3,500억~3,800억 달러 수준으로 원유 수입액을 웃돕니다. 중국이 반도체 자립을 국가 안보 과제로 삼는 배경입니다."},
+  {q:"2019년 개장해 중국 반도체·첨단기술 기업의 주요 상장 통로가 된 상하이거래소의 시장은?", a:["창업판(ChiNext)","커촹반(科创板, STAR Market)","베이징증권거래소","B주 시장"], c:1,
+   e:"커촹반은 적자 기업도 상장할 수 있는 등록제를 도입해 SMIC, Cambricon, Montage 등 반도체 기업이 대거 상장했습니다. 선전의 창업판과 함께 중국판 나스닥으로 불립니다."},
+  {q:"화웨이가 엔비디아 대안으로 내세우는 AI 가속기 칩 브랜드는?", a:["Kunpeng","Kirin","Ascend(昇腾)","Balong"], c:2,
+   e:"Ascend 910 시리즈는 중국 AI 데이터센터에서 엔비디아 H20 등의 대체재로 쓰입니다. 미국은 2025년 5월 화웨이 Ascend를 세계 어디서 사용하든 미국 수출통제 위반 가능성이 있다고 경고했습니다."},
+  {q:"미국이 중국 수출용으로 성능을 낮춘 엔비디아 칩의 순서로 맞는 것은?", a:["A100 → H100 → B200","A800 → H800 → H20","V100 → T4 → L40","RTX 4090 → 4090D → 5090"], c:1,
+   e:"2022년 10월 규제 후 엔비디아는 A800·H800을 만들었지만 2023년 10월 규제로 이마저 막혔고, 이후 H20을 출시했습니다. H20도 2025년 4월 수출 허가 대상이 됐다가 7월 허가가 재개되는 등 규제가 계속 흔들렸습니다."},
+  {q:"중국의 2위 파운드리로, 성숙 공정(전력반도체·아날로그 등)에 강점을 가진 회사는?", a:["Hua Hong(华虹)","SMIC","GlobalFoundries","UMC"], c:0,
+   e:"Hua Hong은 상하이·우시에 8인치·12인치 팹을 두고 BCD, 전력반도체, 임베디드 플래시 등 특화 공정을 제공합니다. 첨단 공정보다 성숙 공정 캐파 확대에 집중하는 중국 전략을 상징합니다."},
+  {q:"중국 정부가 정부·공공기관의 IT 시스템을 국산 하드웨어·소프트웨어로 대체하는 정책을 부르는 말은?", a:["일대일로","신창(信创, 신시스템 혁신)","쌍순환","공동부유"], c:1,
+   e:"신창(信息技术应用创新)은 CPU·OS·DB를 국산으로 바꾸는 정책으로, 룽손·화웨이 Kunpeng·하이곤 같은 국산 CPU 수요를 만들어냅니다. 미국 언론은 '딜리트 아메리카'라고 부르기도 했습니다."},
+  {q:"2024년 12월 중국 시장감독관리총국(SAMR)이 반독점 조사에 착수한 미국 반도체 기업은?", a:["인텔","엔비디아","퀄컴","마이크론"], c:1,
+   e:"SAMR은 엔비디아의 2020년 멜라녹스 인수 승인 조건 위반 여부를 조사했습니다. 2023년 5월에는 마이크론 제품이 사이버 안보 심사에서 불합격 판정을 받아 핵심 인프라 조달에서 배제됐습니다. 미국 규제에 대한 중국의 맞대응 카드입니다."},
+  {q:"2025년 4월 중국이 미국산 반도체에 관세를 매기며 원산지 판정 기준으로 삼은 것은?", a:["최종 패키징 장소","브랜드 본사 소재지","웨이퍼 제조(팹) 위치","설계사 소재지"], c:2,
+   e:"중국 반도체산업협회는 원산지를 웨이퍼 팹 소재지로 판정한다고 안내했습니다. 이에 따라 대만·한국에서 제조되는 엔비디아·AMD·퀄컴 칩은 관세를 피하고, 미국 내 팹에서 만드는 인텔·TI 제품이 영향을 받게 됐습니다."},
+  {q:"2025년 초 저비용으로 고성능 AI 모델을 내놓아 미국 AI 주가를 흔든 중국 스타트업은?", a:["문샷AI","딥시크(DeepSeek)","지푸AI","바이촨"], c:1,
+   e:"딥시크는 2025년 1월 R1 모델을 공개하며 수출통제 속에서도 제한된 GPU로 최고 수준 모델을 만들 수 있음을 보였습니다. 이후 중국 내 AI 반도체 수요와 국산 칩 최적화 움직임이 가속되었습니다."},
+  {q:"중국의 대표 팹리스로, 스마트폰용 저가 AP를 만들어 세계 시장 점유율 상위권에 드는 기업은?", a:["Unisoc(紫光展锐)","Loongson","Moore Threads","Goodix"], c:0,
+   e:"Unisoc은 칭화유니그룹 계열로 미디어텍·퀄컴에 이어 세계 3~4위 스마트폰 AP 공급사입니다. 저가·중저가 안드로이드폰과 IoT 모듈에 강점이 있습니다."},
+  {q:"세계 최대 반도체 소비 시장으로서 중국이 전 세계 반도체 매출에서 차지하는 비중은 대략 얼마인가?", a:["약 10%","약 30%","약 60%","약 80%"], c:1,
+   e:"WSTS·SIA 기준 중국은 매년 전 세계 반도체 매출의 약 30% 안팎을 차지하는 최대 단일 시장입니다. 다만 그중 상당수는 중국에서 조립돼 해외로 재수출되는 제품에 들어갑니다."},
+];
+
+const N = 10, LIMIT = 20;
+const $ = id => document.getElementById(id);
+
+// 웨이퍼 다이 생성: 원 안에 들어가는 셀만 다이로 사용
+const dieCells = [];
+(function buildWafer(){
+  const g = $("dies"), size = 8, cols = 12, off = (100 - cols*size)/2;
+  for(let r=0;r<cols;r++)for(let c=0;c<cols;c++){
+    const x = off + c*size, y = off + r*size;
+    const cx = x+size/2-50, cy = y+size/2-50;
+    if(Math.hypot(cx,cy) > 44) continue;
+    const rect = document.createElementNS("http://www.w3.org/2000/svg","rect");
+    rect.setAttribute("x",x);rect.setAttribute("y",y);
+    rect.setAttribute("width",size);rect.setAttribute("height",size);
+    rect.setAttribute("class","die");
+    g.appendChild(rect); dieCells.push(rect);
+  }
+})();
+
+let nick="", lastEntryId=null;
+let qs=[], idx=0, score=0, correct=0, timer=null, tLeft=LIMIT, answered=false, log=[], slots=[];
+
+const shuffle = a => { for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
+
+function show(id){ ["start","quiz","result"].forEach(s=>$(s).classList.toggle("hidden", s!==id)); }
+
+function loadRank(){ try{ return JSON.parse(localStorage.getItem("cnChipRank")||"[]"); }catch(e){ return []; } }
+function saveRank(list){ try{ localStorage.setItem("cnChipRank", JSON.stringify(list)); }catch(e){} }
+function renderRank(){
+  const list = loadRank();
+  const t=$("rankTable");
+  if(!list.length){ t.innerHTML=`<tr><td colspan="3" class="empty">아직 기록이 없습니다.</td></tr>`; return; }
+  t.innerHTML = list.slice(0,10).map((r,i)=>{
+    const d=new Date(r.t), date=`${d.getMonth()+1}/${d.getDate()}`;
+    return `<tr class="${r.id===lastEntryId?"me":""}"><td>${i+1}</td><td>${esc(r.n)}<span class="sub">${r.y}% · ${date}</span></td><td>${r.s}점</td></tr>`;
+  }).join("");
+}
+const esc = t => t.replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
+
+function start(){
+  const v=$("nickInput").value.trim();
+  if(!v){ $("nickErr").textContent="닉네임을 입력하면 시작할 수 있습니다."; $("nickInput").focus(); return; }
+  $("nickErr").textContent=""; nick=v;
+  try{ localStorage.setItem("cnChipNick", nick); }catch(e){}
+  qs = shuffle([...BANK]).slice(0,N).map(q=>{
+    const order = shuffle(q.a.map((_,i)=>i));
+    return {q:q.q, e:q.e, a:order.map(i=>q.a[i]), c:order.indexOf(q.c)};
+  });
+  idx=0; score=0; correct=0; log=[];
+  dieCells.forEach(d=>d.setAttribute("class","die"));
+  // 문제별로 할당할 다이 묶음
+  const pool = shuffle([...dieCells]); const per = Math.floor(pool.length/N);
+  slots = Array.from({length:N},(_,i)=>pool.slice(i*per,(i+1)*per));
+  $("scoreBadge").textContent = 0;
+  show("quiz"); render();
+}
+
+function render(){
+  answered=false;
+  const q = qs[idx];
+  $("progress").textContent = `${idx+1} / ${N}`;
+  $("qText").textContent = q.q;
+  $("explain").classList.add("hidden");
+  $("nextBtn").classList.add("hidden");
+  const box = $("opts"); box.innerHTML="";
+  q.a.forEach((t,i)=>{
+    const b=document.createElement("button"); b.className="opt";
+    b.innerHTML=`<span class="k">${"ABCD"[i]}</span><span>${t}</span>`;
+    b.onclick=()=>answer(i); box.appendChild(b);
+  });
+  slots[idx].forEach(d=>d.setAttribute("class","die cur"));
+  tLeft=LIMIT; tick(true);
+  clearInterval(timer); timer=setInterval(()=>tick(false),1000);
+}
+
+function tick(init){
+  if(!init) tLeft--;
+  $("timeLeft").textContent = `${tLeft}초`;
+  const bar=$("timerBar"); bar.style.width=(tLeft/LIMIT*100)+"%";
+  bar.classList.toggle("warn", tLeft<=5);
+  if(tLeft<=0) answer(-1);
+}
+
+function answer(i){
+  if(answered) return; answered=true; clearInterval(timer);
+  const q=qs[idx], ok = i===q.c;
+  const opts=[...document.querySelectorAll(".opt")];
+  opts.forEach((b,j)=>{ b.disabled=true; if(j===q.c) b.classList.add("right"); else if(j===i) b.classList.add("wrong"); });
+  let gain=0;
+  if(ok){ gain = 10 + Math.round(tLeft/LIMIT*5); correct++; }
+  score+=gain; $("scoreBadge").textContent=score;
+  slots[idx].forEach(d=>d.setAttribute("class","die "+(ok?"ok":"ng")));
+  const ex=$("explain");
+  ex.innerHTML = (i===-1 ? "<b>시간 초과.</b> " : ok ? `<b>정답! +${gain}점.</b> ` : "<b>오답.</b> ") + q.e;
+  ex.classList.remove("hidden");
+  log.push({q:q.q, ok, ans:q.a[q.c], mine: i===-1 ? "시간 초과" : q.a[i], e:q.e});
+  const nb=$("nextBtn"); nb.textContent = idx===N-1 ? "결과 보기" : "다음 문제";
+  nb.classList.remove("hidden"); nb.focus();
+}
+
+function finish(){
+  show("result");
+  const yieldPct = Math.round(correct/N*100);
+  $("resNick").textContent=nick;
+  $("finalScore").textContent=score;
+  lastEntryId = Date.now()+"-"+Math.random().toString(36).slice(2,6);
+  const list = loadRank();
+  list.push({id:lastEntryId, n:nick, s:score, y:yieldPct, t:Date.now()});
+  list.sort((a,b)=>b.s-a.s || a.t-b.t);
+  saveRank(list.slice(0,50));
+  renderRank();
+  $("stCorrect").textContent=`${correct}/${N}`;
+  $("stYield").textContent=yieldPct+"%";
+  let best=0; try{ best=Number(localStorage.getItem("cnChipBest")||0); if(score>best){best=score; localStorage.setItem("cnChipBest",best);} }catch(e){}
+  $("stBest").textContent=best;
+  const g = yieldPct>=90 ? ["S · 차이나 전문가","중국 반도체 판을 완전히 읽고 있습니다. 이 웨이퍼는 그대로 출하 가능합니다."]
+        : yieldPct>=70 ? ["A · 시니어","큰 흐름은 확실히 잡혀 있습니다. 아래 틀린 문제 해설만 보면 완성입니다."]
+        : yieldPct>=50 ? ["B · 주니어","기업명은 알지만 정책·규제 연도가 헷갈립니다. 아래 해설로 정리해보세요."]
+        : ["C · 입문","아래 틀린 문제 해설을 읽고 한 판 더 돌려보세요. 수율은 반복에서 올라갑니다."];
+  $("grade").textContent=g[0]; $("comment").textContent=g[1];
+  const wrong = log.filter(l=>!l.ok), right = log.filter(l=>l.ok);
+  $("wrongTitle").textContent = wrong.length ? `틀린 문제 ${wrong.length}개 · 해설` : "틀린 문제 없음 — 전부 정답입니다";
+  $("wrongList").innerHTML = wrong.map(l=>`<li>
+      <div class="wq">${esc(l.q)}</div>
+      <div class="wa"><span class="x">내 답: ${esc(l.mine)}</span><span class="o">정답: ${esc(l.ans)}</span></div>
+      <div class="we">${esc(l.e)}</div></li>`).join("");
+  $("reviewList").innerHTML = right.map((l,i)=>`<li class="ok"><span class="m">O</span>${esc(l.q)}<br><span style="color:var(--muted)">정답: ${esc(l.ans)}</span></li>`).join("") || `<li class="ng">맞힌 문제가 없습니다.</li>`;
+}
+
+$("startBtn").onclick=start;
+$("retryBtn").onclick=()=>{ show("start"); $("nickInput").focus(); };
+$("clearRank").onclick=()=>{ if(confirm("이 기기의 순위 기록을 모두 지울까요?")){ saveRank([]); lastEntryId=null; renderRank(); } };
+$("nickInput").addEventListener("keydown",e=>{ if(e.key==="Enter") start(); });
+try{ $("nickInput").value = localStorage.getItem("cnChipNick")||""; }catch(e){}
+$("nextBtn").onclick=()=>{ idx++; idx<N ? render() : finish(); };
+$("shareBtn").onclick=async()=>{
+  const t=`${nick} · 중국 반도체 퀴즈 결과: ${score}점 (수율 ${Math.round(correct/N*100)}%, ${correct}/${N} 정답)`;
+  try{ await navigator.clipboard.writeText(t); $("shareBtn").textContent="복사됨"; setTimeout(()=>$("shareBtn").textContent="결과 복사",1500);}catch(e){ alert(t); }
+};
+document.addEventListener("keydown",e=>{
+  if($("quiz").classList.contains("hidden")) return;
+  const k="ABCD".indexOf(e.key.toUpperCase());
+  if(k>=0 && !answered) answer(k);
+  if(e.key==="Enter" && answered) $("nextBtn").click();
+});
+</script>
+</body>
+</html>
